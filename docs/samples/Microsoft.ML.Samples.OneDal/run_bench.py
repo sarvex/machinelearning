@@ -57,7 +57,7 @@ def run_case(n_samples, n_features, n_trees, n_leaves, n_runs, task_type):
     metrics_map_template = {el: '{} ' + f'{el}' for el in metrics}
 
     result = None
-    for i in range(n_runs):
+    for _ in range(n_runs):
         env_copy = os.environ.copy()
         default_stdout, default_stderr = read_output_from_command(f'dotnet run {train_filename} {test_filename} {task_type} RandomForest {n_trees} {n_leaves}', env_copy)
 
@@ -77,11 +77,11 @@ def run_case(n_samples, n_features, n_trees, n_leaves, n_runs, task_type):
         default_res = default_res.rename(columns={k: v.format('ML.NET') for k, v in metrics_map_template.items()})
         optimized_res = optimized_res.rename(columns={k: v.format('oneDAL') for k, v in metrics_map_template.items()})
 
-        if result is None:
-            result = default_res.merge(optimized_res)
-        else:
-            result = pd.concat([result, default_res.merge(optimized_res)], axis=0)
-
+        result = (
+            default_res.merge(optimized_res)
+            if result is None
+            else pd.concat([result, default_res.merge(optimized_res)], axis=0)
+        )
     all_columns = list(result.columns)
     groupby_columns = list(case_dict.keys())
     metric_columns = list(result.columns)
